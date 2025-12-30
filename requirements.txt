@@ -1,0 +1,52 @@
+# Core RAG dependencies
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-openai>=0.0.5
+openai>=1.10.0
+
+# Multi-modal embeddings and models
+transformers>=4.36.0
+torch>=2.1.0
+torchvision>=0.16.0
+sentence-transformers>=2.3.0
+pillow>=10.0.0
+
+# CLIP for image embeddings
+clip @ git+https://github.com/openai/CLIP.git
+ftfy>=6.1.0
+regex>=2023.0.0
+
+# Vector databases
+chromadb>=0.4.22
+faiss-cpu>=1.7.4
+
+# Document parsing
+unstructured[all-docs]>=0.12.0
+unstructured-inference>=0.7.0
+pdf2image>=1.16.3
+pytesseract>=0.3.10
+pdfplumber>=0.10.0
+python-magic-bin>=0.4.14; sys_platform == 'win32'
+python-magic>=0.4.27; sys_platform != 'win32'
+
+# Table processing
+pandas>=2.0.0
+tabulate>=0.9.0
+openpyxl>=3.1.0
+
+# Image captioning (optional - for local image understanding)
+# Note: These are heavy dependencies
+# git+https://github.com/haotian-liu/LLaVA.git
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.66.0
+pydantic>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# Development
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.1.0
+jupyter>=1.0.0
