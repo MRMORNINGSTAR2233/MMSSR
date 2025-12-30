@@ -14,6 +14,12 @@ from sentence_transformers import SentenceTransformer
 from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
 import openai
 
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+
 from .config import config
 from .parsers import DocumentElement, ModalityType
 
@@ -97,6 +103,39 @@ class OpenAITextEmbedder(BaseEmbedder):
             
             batch_embeddings = [item.embedding for item in response.data]
             all_embeddings.extend(batch_embeddings)
+        
+        return np.array(all_embeddings)
+    
+    @property
+    def dimension(self) -> int:
+        return self._dimension
+
+
+class GeminiTextEmbedder(BaseEmbedder):
+    """Embedder using Google's Gemini embedding API"""
+    
+    def __init__(self, model_name: str = "text-embedding-004"):
+        if not GEMINI_AVAILABLE:
+            raise ImportError("google-generativeai not installed. Run: pip install google-generativeai")
+        
+        self.model_name = model_name
+        genai.configure(api_key=config.google_api_key)
+        self._dimension = 768
+        
+    def embed(self, content: Union[str, List[str]]) -> np.ndarray:
+        """Generate embeddings using Gemini API"""
+        if isinstance(content, str):
+            content = [content]
+        
+        all_embeddings = []
+        
+        for text in content:
+            result = genai.embed_content(
+                model=f"models/{self.model_name}",
+                content=text,
+                task_type="retrieval_document"
+            )
+            all_embeddings.append(result['embedding'])
         
         return np.array(all_embeddings)
     
