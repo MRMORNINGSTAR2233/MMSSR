@@ -233,8 +233,17 @@ class MultiModalVectorStore:
         for mod in ModalityType:
             collection_key = f"{self.collection_name}_{mod.value}"
             if self._collection_exists(collection_key):
-                collection = self._get_collection(mod, 384)  # Dummy dimension
-                stats[mod.value] = collection.count()
+                try:
+                    # Use existing collection without attempting to create it with a dummy dimension
+                    collection = self.client.get_collection(collection_key)
+                    stats[mod.value] = collection.count()
+                except Exception:
+                    # Fallback to cached collection if available
+                    collection = self.collections.get(collection_key)
+                    if collection:
+                        stats[mod.value] = collection.count()
+                    else:
+                        stats[mod.value] = 0
         
         return stats
 

@@ -283,14 +283,15 @@ class MultiModalParser:
         """Parse a document based on its file type"""
         file_path = Path(file_path)
         
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-        
+        # Check file type first so we raise a clear error for unsupported formats
         suffix = file_path.suffix.lower()
         parser = self.parsers.get(suffix)
         
         if not parser:
             raise ValueError(f"Unsupported file type: {suffix}")
+        
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
         
         return parser.parse(file_path)
     

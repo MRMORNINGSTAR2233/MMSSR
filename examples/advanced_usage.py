@@ -131,7 +131,43 @@ def main():
     print("Initializing Multi-Modal RAG Pipeline...")
     pipeline = MultiModalRAGPipeline(enable_ocr=True)
     
-    # Index documents
+    # Optionally run full RAG end-to-end example immediately (uses live providers)
+    from mmssr.parsers import DocumentElement, ModalityType
+
+    if os.getenv('RUN_LIVE_EXAMPLES', 'true').lower() in ('1', 'true', 'yes'):
+        print('\nRunning full RAG end-to-end example now...')
+        try:
+            # Build small in-memory docs and index + query
+            docs = [
+                DocumentElement(
+                    id='ex_doc_1',
+                    type=ModalityType.TEXT,
+                    content='Acme Corp was founded in 2010 by Alice and Bob in San Francisco.',
+                    metadata={'topic': 'founding'},
+                    source='ex_doc1',
+                ),
+                DocumentElement(
+                    id='ex_doc_2',
+                    type=ModalityType.TEXT,
+                    content='In 2015 Acme Corp acquired Beta LLC as part of its expansion.',
+                    metadata={'topic': 'acquisition'},
+                    source='ex_doc2',
+                ),
+            ]
+
+            pipeline.clear_index()
+            pipeline.retriever.index_documents(docs)
+            q = 'When was Acme Corp founded?'
+            res = pipeline.query(q, n_results=5)
+            print('\nFull RAG Answer:')
+            print(res['answer'])
+            print('\nSources:', res.get('sources'))
+        except Exception as e:
+            print('Full RAG example failed:', type(e).__name__, str(e))
+    else:
+        print('\nSkipping live full RAG example (set RUN_LIVE_EXAMPLES=true to enable)')
+
+    # Index documents (from disk) if available
     data_dir = "data/sample"
     if os.path.exists(data_dir):
         print(f"\nIndexing directory: {data_dir}")
@@ -143,10 +179,74 @@ def main():
         print("Creating sample directory...")
         os.makedirs(data_dir, exist_ok=True)
         print(f"Please add documents to {data_dir} and run again")
-        return
+
     
     # Run examples
     try:
+        # Full RAG end-to-end example (indexes sample docs, retrieves, and generates answer)
+        def full_rag_end_to_end(pipeline: MultiModalRAGPipeline):
+            print('\n' + '='*60)
+            print('FULL RAG END-TO-END (LIVE)')
+            print('='*60)
+
+            # Sample documents (indexed directly as DocumentElement instances)
+            from mmssr.parsers import DocumentElement, ModalityType
+
+            docs = [
+                DocumentElement(
+                    id='doc_1',
+                    type=ModalityType.TEXT,
+                    content='Acme Corp was founded in 2010 by Alice and Bob in San Francisco.',
+                    metadata={'topic': 'founding'},
+                    source='doc1',
+                ),
+                DocumentElement(
+                    id='doc_2',
+                    type=ModalityType.TEXT,
+                    content='In 2015 Acme Corp acquired Beta LLC as part of its expansion.',
+                    metadata={'topic': 'acquisition'},
+                    source='doc2',
+                ),
+                DocumentElement(
+                    id='doc_3',
+                    type=ModalityType.TEXT,
+                    content='Acme Corp focuses on fintech APIs for small businesses and SMBs.',
+                    metadata={'topic': 'product'},
+                    source='doc3',
+                ),
+            ]
+
+            # Clear any existing index to avoid confusion
+            pipeline.clear_index()
+
+            # Index documents
+            pipeline.retriever.index_documents(docs)
+            print('Indexed sample documents (3 total)')
+
+            # Query and generate
+            query = 'When was Acme Corp founded?'
+            print('\nRunning query:', query)
+            result = pipeline.query(query, n_results=5)
+
+            print('\nAnswer:')
+            print(result['answer'])
+            print('\nSources:')
+            print(result.get('sources'))
+
+            # Sanity check
+            if '2010' in result['answer']:
+                print('\nSanity check passed: answer contains founding year 2010')
+            else:
+                print('\nSanity check failed: founding year not found in answer')
+
+        # Warn about live calls
+        print('\nNote: Running the full RAG example will perform live calls (model downloads and LLM API calls).')
+        confirm = os.getenv('RUN_LIVE_EXAMPLES', 'true').lower() in ('1', 'true', 'yes')
+        if not confirm:
+            print('Set RUN_LIVE_EXAMPLES=true in your environment to opt into live runs. Skipping full RAG example.')
+        else:
+            full_rag_end_to_end(pipeline)
+
         analyze_document_structure(pipeline)
         search_by_modality(pipeline)
         query_with_detailed_context(pipeline)
